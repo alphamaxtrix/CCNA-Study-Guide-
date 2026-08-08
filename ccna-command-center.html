@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA 200-301 :: Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E14;
+    --panel:#10161F;
+    --panel-alt:#161D29;
+    --line:#232D3D;
+    --line-soft:#1A2230;
+    --text:#E4E9F0;
+    --text-dim:#8B97AC;
+    --text-faint:#5A6579;
+    --signal:#5EEAD4;
+    --signal-dim:#1F4A45;
+    --alert:#FDBA5C;
+    --alert-dim:#4A3A1E;
+    --crit:#FB7185;
+    --crit-dim:#4A1E27;
+    --mono:'JetBrains Mono', monospace;
+    --sans:'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:
+      linear-gradient(var(--line-soft) 1px, transparent 1px) 0 0/48px 48px,
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px) 0 0/48px 48px,
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.5;
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+  ::selection{background:var(--signal-dim); color:var(--signal);}
+  a{color:inherit;}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 24px;}
+
+  /* NAV */
+  .nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,14,20,0.88);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1040px; margin:0 auto; padding:14px 24px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:0.02em;
+    color:var(--signal); display:flex; align-items:center; gap:8px;
+  }
+  .brand .dot{width:8px; height:8px; border-radius:50%; background:var(--signal); box-shadow:0 0 8px var(--signal); animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  .tabs{display:flex; gap:4px; font-family:var(--mono); font-size:12px;}
+  .tab{
+    padding:8px 12px; border-radius:6px; cursor:pointer; color:var(--text-dim);
+    border:1px solid transparent; letter-spacing:0.03em; transition:all .15s ease;
+    background:none; font-family:var(--mono); font-size:12px;
+  }
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--signal); background:var(--signal-dim); border-color:#2a5f58;}
+
+  /* HERO */
+  .hero{padding:64px 0 40px;}
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; color:var(--text-faint);
+    letter-spacing:0.12em; text-transform:uppercase; margin-bottom:16px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:''; width:24px; height:1px; background:var(--text-faint);}
+  h1{
+    font-family:var(--mono); font-weight:800; font-size:clamp(28px,5vw,46px);
+    line-height:1.1; letter-spacing:-0.01em; max-width:720px;
+  }
+  h1 .accent{color:var(--signal);}
+  .lead{color:var(--text-dim); font-size:16px; max-width:560px; margin-top:16px;}
+
+  .stat-row{display:flex; gap:28px; margin-top:32px; flex-wrap:wrap;}
+  .stat{font-family:var(--mono);}
+  .stat .num{font-size:28px; font-weight:700; color:var(--signal);}
+  .stat .lbl{font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.08em; margin-top:2px;}
+
+  /* TOPOLOGY MAP */
+  .map-panel{
+    margin-top:40px; background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; padding:20px; overflow:hidden;
+  }
+  .map-panel-head{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
+    font-family:var(--mono); font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.08em;
+  }
+  svg{width:100%; height:auto; display:block;}
+  .node-circle{transition:fill .4s ease, stroke .4s ease;}
+  .node-label{font-family:var(--mono); font-size:11px; fill:var(--text); font-weight:600;}
+  .node-pct{font-family:var(--mono); font-size:10px; fill:var(--text-faint);}
+  .edge{stroke:var(--line); stroke-width:1.5; transition:stroke .4s ease, stroke-width .4s ease;}
+  .edge.lit{stroke:var(--signal-dim); stroke-width:2;}
+  .node-group{cursor:pointer;}
+  .node-group:hover .node-circle{stroke-width:2.5;}
+
+  /* SECTIONS */
+  section.panel{padding:56px 0 8px; border-top:1px solid var(--line); margin-top:40px;}
+  .sec-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:8px;}
+  .sec-title{font-family:var(--mono); font-size:20px; font-weight:700;}
+  .sec-title .idx{color:var(--text-faint); font-weight:400; margin-right:8px;}
+  .sec-sub{color:var(--text-dim); font-size:13px; font-family:var(--mono);}
+
+  /* TRACKER */
+  .domain-block{margin-bottom:28px; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  .domain-head{
+    padding:14px 18px; display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--line); cursor:pointer; user-select:none;
+  }
+  .domain-title{font-family:var(--mono); font-weight:600; font-size:14px; display:flex; align-items:center; gap:10px;}
+  .domain-weight{font-family:var(--mono); font-size:11px; color:var(--text-faint); background:var(--panel-alt); padding:2px 8px; border-radius:4px;}
+  .domain-bar{width:100px; height:4px; background:var(--line); border-radius:2px; overflow:hidden;}
+  .domain-bar-fill{height:100%; background:var(--signal); transition:width .4s ease;}
+  .domain-body{padding:6px 18px 14px;}
+  .item{
+    display:flex; align-items:flex-start; gap:12px; padding:9px 0;
+    border-bottom:1px solid var(--line-soft); font-size:14px;
+  }
+  .item:last-child{border-bottom:none;}
+  .checkbox{
+    width:18px; height:18px; border-radius:4px; border:1.5px solid var(--text-faint);
+    flex-shrink:0; margin-top:1px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:all .15s ease;
+  }
+  .checkbox.checked{background:var(--signal); border-color:var(--signal);}
+  .checkbox.checked::after{content:'✓'; color:#0A0E14; font-size:12px; font-weight:800;}
+  .item-label{cursor:pointer; color:var(--text);}
+  .item.done .item-label{color:var(--text-faint); text-decoration:line-through;}
+
+  /* GUIDE */
+  .guide-card{background:var(--panel); border:1px solid var(--line); border-radius:10px; margin-bottom:12px; overflow:hidden;}
+  .guide-q{
+    padding:16px 18px; display:flex; justify-content:space-between; align-items:center;
+    cursor:pointer; user-select:none;
+  }
+  .guide-q-title{font-family:var(--mono); font-weight:600; font-size:14px;}
+  .guide-q-arrow{color:var(--text-faint); font-size:12px; transition:transform .2s ease;}
+  .guide-card.open .guide-q-arrow{transform:rotate(180deg); color:var(--signal);}
+  .guide-a{max-height:0; overflow:hidden; transition:max-height .3s ease;}
+  .guide-card.open .guide-a{max-height:600px;}
+  .guide-a-inner{padding:0 18px 18px; color:var(--text-dim); font-size:14px;}
+  .guide-a-inner ul{margin:8px 0 0 18px;}
+  .guide-a-inner li{margin-bottom:6px;}
+  .review-q{
+    margin-top:12px; padding:10px 12px; background:var(--panel-alt); border-radius:6px;
+    border-left:2px solid var(--alert); font-size:13px; color:var(--text);
+  }
+
+  /* FLASHCARDS */
+  .filter-row{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .chip{
+    font-family:var(--mono); font-size:11px; padding:6px 12px; border-radius:20px;
+    border:1px solid var(--line); color:var(--text-dim); cursor:pointer; background:transparent;
+  }
+  .chip.active{background:var(--signal-dim); color:var(--signal); border-color:#2a5f58;}
+  .card-stage{display:flex; flex-direction:column; align-items:center; gap:20px;}
+  .flashcard{
+    width:100%; max-width:560px; height:260px; perspective:1200px; cursor:pointer;
+  }
+  .flashcard-inner{
+    position:relative; width:100%; height:100%; transition:transform .5s;
+    transform-style:preserve-3d;
+  }
+  .flashcard.flipped .flashcard-inner{transform:rotateY(180deg);}
+  .flashcard-face{
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:14px;
+    background:var(--panel); border:1px solid var(--line); padding:28px;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center;
+  }
+  .flashcard-face.back{transform:rotateY(180deg); background:var(--panel-alt); border-color:#2a5f58;}
+  .fc-tag{font-family:var(--mono); font-size:10px; color:var(--signal); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px;}
+  .fc-text{font-size:16px; font-weight:500;}
+  .fc-hint{position:absolute; bottom:14px; font-family:var(--mono); font-size:10px; color:var(--text-faint);}
+  .card-controls{display:flex; gap:12px; align-items:center;}
+  .btn{
+    font-family:var(--mono); font-size:12px; padding:10px 18px; border-radius:8px;
+    border:1px solid var(--line); background:var(--panel); color:var(--text); cursor:pointer;
+    transition:all .15s ease;
+  }
+  .btn:hover{border-color:var(--signal); color:var(--signal);}
+  .btn.primary{background:var(--signal); color:#0A0E14; border-color:var(--signal); font-weight:700;}
+  .btn.primary:hover{opacity:0.9; color:#0A0E14;}
+  .card-count{font-family:var(--mono); font-size:12px; color:var(--text-faint);}
+
+  /* QUIZ */
+  .quiz-box{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:28px;}
+  .quiz-progress{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-bottom:20px;}
+  .quiz-q{font-size:16px; font-weight:600; margin-bottom:20px;}
+  .quiz-opt{
+    display:block; width:100%; text-align:left; padding:13px 16px; margin-bottom:10px;
+    background:var(--panel-alt); border:1px solid var(--line); border-radius:8px;
+    color:var(--text); font-size:14px; cursor:pointer; font-family:var(--sans);
+    transition:all .15s ease;
+  }
+  .quiz-opt:hover{border-color:var(--text-faint);}
+  .quiz-opt.correct{border-color:var(--signal); background:var(--signal-dim); color:var(--signal);}
+  .quiz-opt.wrong{border-color:var(--crit); background:var(--crit-dim); color:var(--crit);}
+  .quiz-opt.disabled{pointer-events:none;}
+  .quiz-explain{margin-top:14px; padding:12px 14px; background:var(--panel-alt); border-radius:8px; font-size:13px; color:var(--text-dim); border-left:2px solid var(--signal);}
+  .quiz-footer{display:flex; justify-content:space-between; align-items:center; margin-top:22px;}
+  .quiz-score{font-family:var(--mono); font-size:13px; color:var(--text-dim);}
+  .quiz-done{text-align:center; padding:20px 0;}
+  .quiz-done .big{font-family:var(--mono); font-size:42px; font-weight:800; color:var(--signal);}
+
+  footer{text-align:center; padding:60px 0 20px; font-family:var(--mono); font-size:11px; color:var(--text-faint);}
+
+  @media (max-width:640px){
+    .tabs{width:100%; justify-content:space-between;}
+    .tab{padding:8px 6px; font-size:10px;}
+    .stat-row{gap:18px;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand"><span class="dot"></span>CCNA::200-301</div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="map">MAP</button>
+      <button class="tab" data-tab="tracker">TRACKER</button>
+      <button class="tab" data-tab="guide">GUIDE</button>
+      <button class="tab" data-tab="flash">FLASHCARDS</button>
+      <button class="tab" data-tab="quiz">QUIZ</button>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- MAP / HERO -->
+  <div class="view" id="view-map">
+    <div class="hero">
+      <div class="eyebrow">Study companion // Free CCNA 200-301 Complete Practical Course</div>
+      <h1>Bring the <span class="accent">network</span> online, one domain at a time.</h1>
+      <p class="lead">Six exam domains, wired together like the topology you're about to master. Track what you've covered, drill the concepts, and quiz yourself until every node lights up.</p>
+
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="stat-pct">0%</div><div class="lbl">Overall progress</div></div>
+        <div class="stat"><div class="num" id="stat-done">0/30</div><div class="lbl">Topics checked off</div></div>
+        <div class="stat"><div class="num" id="stat-quiz">—</div><div class="lbl">Best quiz score</div></div>
+      </div>
+
+      <div class="map-panel">
+        <div class="map-panel-head"><span>topology.svg</span><span id="map-legend">● not started &nbsp; ◐ in progress &nbsp; ● online</span></div>
+        <svg id="topo-svg" viewBox="0 0 960 420"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACKER -->
+  <div class="view" id="view-tracker" style="display:none;">
+    <section class="panel" style="border-top:none; padding-top:24px;">
+      <div class="sec-head">
+        <div class="sec-title"><span class="idx">01</span>Progress Tracker</div>
+        <div class="sec-sub">check off each topic as you finish the video + lab</div>
+      </div>
+      <div id="tracker-container"></div>
+    </section>
+  </div>
+
+  <!-- GUIDE -->
+  <div class="view" id="view-guide" style="display:none;">
+    <section class="panel" style="border-top:none; padding-top:24px;">
+      <div class="sec-head">
+        <div class="sec-title"><span class="idx">02</span>Study Guide</div>
+        <div class="sec-sub">key concepts + review questions, by domain</div>
+      </div>
+      <div id="guide-container"></div>
+    </section>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <div class="view" id="view-flash" style="display:none;">
+    <section class="panel" style="border-top:none; padding-top:24px;">
+      <div class="sec-head">
+        <div class="sec-title"><span class="idx">03</span>Flashcards</div>
+        <div class="sec-sub">click the card to flip</div>
+      </div>
+      <div class="filter-row" id="flash-filters"></div>
+      <div class="card-stage">
+        <div class="flashcard" id="flashcard">
+          <div class="flashcard-inner">
+            <div class="flashcard-face front">
+              <div class="fc-tag" id="fc-tag-front">domain</div>
+              <div class="fc-text" id="fc-front">Q</div>
+              <div class="fc-hint">tap to flip</div>
+            </div>
+            <div class="flashcard-face back">
+              <div class="fc-tag" id="fc-tag-back">answer</div>
+              <div class="fc-text" id="fc-back">A</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-controls">
+          <button class="btn" id="fc-prev">← prev</button>
+          <span class="card-count" id="fc-count">1 / 30</span>
+          <button class="btn" id="fc-next">next →</button>
+          <button class="btn" id="fc-shuffle">⤮ shuffle</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="view" id="view-quiz" style="display:none;">
+    <section class="panel" style="border-top:none; padding-top:24px;">
+      <div class="sec-head">
+        <div class="sec-title"><span class="idx">04</span>Quiz</div>
+        <div class="sec-sub">20 questions across all domains</div>
+      </div>
+      <div class="quiz-box" id="quiz-box"></div>
+    </section>
+  </div>
+
+  <footer>CCNA 200-301 Command Center — built for self-paced study alongside the David Bombal playlist. Progress is saved to your account automatically.</footer>
+</div>
+
+<script>
+/* ============ DATA ============ */
+const DOMAINS = [
+  {id:'fund', name:'Network Fundamentals', weight:20, x:160, y:120,
+    topics:[
+      {t:'OSI model & TCP/IP model, encapsulation', done:false},
+      {t:'Network devices: hubs, switches, routers', done:false},
+      {t:'Ports, protocols, clients & servers', done:false},
+      {t:'Binary & hexadecimal conversion', done:false},
+      {t:'IPv4 addressing & subnetting basics', done:false},
+      {t:'IPv6 addressing basics', done:false},
+    ]},
+  {id:'access', name:'Network Access', weight:20, x:480, y:70,
+    topics:[
+      {t:'VLANs & trunking (802.1Q)', done:false},
+      {t:'Spanning Tree Protocol & Root Guard', done:false},
+      {t:'EtherChannel (LACP/PAgP)', done:false},
+      {t:'Wireless fundamentals (AP, WLC, WPA)', done:false},
+      {t:'Switch MAC learning & ARP', done:false},
+    ]},
+  {id:'ip-conn', name:'IP Connectivity', weight:25, x:800, y:120,
+    topics:[
+      {t:'Subnetting & VLSM practice', done:false},
+      {t:'Static & default routing', done:false},
+      {t:'OSPF fundamentals', done:false},
+      {t:'Inter-VLAN routing (router-on-a-stick vs SVI)', done:false},
+      {t:'First-hop redundancy concepts', done:false},
+    ]},
+  {id:'services', name:'IP Services', weight:10, x:160, y:300,
+    topics:[
+      {t:'NAT & PAT', done:false},
+      {t:'DHCP (DORA process)', done:false},
+      {t:'DNS & NTP', done:false},
+      {t:'SNMP & Syslog basics', done:false},
+    ]},
+  {id:'security', name:'Security Fundamentals', weight:15, x:480, y:360,
+    topics:[
+      {t:'Port security & violation modes', done:false},
+      {t:'Standard & extended ACLs', done:false},
+      {t:'AAA concepts', done:false},
+      {t:'DHCP snooping & device hardening', done:false},
+      {t:'VPN basics', done:false},
+    ]},
+  {id:'auto', name:'Automation & Programmability', weight:10, x:800, y:300,
+    topics:[
+      {t:'SDN controller-based vs traditional networking', done:false},
+      {t:'REST APIs & JSON basics', done:false},
+      {t:'Config mgmt overview (Ansible/Puppet/Chef)', done:false},
+      {t:'Network programmability use cases', done:false},
+    ]},
+];
+
+const EDGES = [['fund','access'],['access','ip-conn'],['fund','services'],['access','security'],['ip-conn','security'],['services','security'],['security','auto'],['ip-conn','auto']];
+
+const GUIDE = [
+  {domain:'Network Fundamentals', q:'OSI Model & Encapsulation', concepts:[
+    '7 layers top-down: Application, Presentation, Session, Transport, Network, Data Link, Physical.',
+    'TCP/IP model condenses this into 4 layers: Application, Transport, Internet, Network Access.',
+    'PDU names by layer: data (App/Pres/Sess) → segment (Transport) → packet (Network) → frame (Data Link) → bits (Physical).'
+  ], review:'List all 7 OSI layers top to bottom and name one protocol at each layer.'},
+  {domain:'Network Fundamentals', q:'Network Devices', concepts:[
+    'Hubs/repeaters operate at Layer 1, flood every port, single collision domain.',
+    'Switches operate at Layer 2, forward based on MAC address table, each port is its own collision domain.',
+    'Routers operate at Layer 3, forward based on IP address, separate broadcast domains.'
+  ], review:'Why did switches replace hubs in modern LANs?'},
+  {domain:'Network Fundamentals', q:'Binary, Hex & IP Math', concepts:[
+    'Binary place values (left to right): 128-64-32-16-8-4-2-1.',
+    'Hex is base-16 (0-9, A-F); each hex digit = exactly 4 bits.',
+    'An IPv4 address is 32 bits across 4 octets; a subnet mask marks network vs host bits.'
+  ], review:'Convert 172.16.5.10 into full 32-bit binary.'},
+  {domain:'Network Access', q:'VLANs & Trunking', concepts:[
+    'Access ports carry one VLAN; trunk ports carry multiple VLANs tagged with 802.1Q.',
+    'The native VLAN on a trunk is untagged — it must match on both ends or you get VLAN leakage.',
+    'Router-on-a-stick or a Layer 3 switch SVI is required for inter-VLAN routing.'
+  ], review:'Why must the native VLAN match on both ends of a trunk link?'},
+  {domain:'Network Access', q:'Spanning Tree & Root Guard', concepts:[
+    'STP prevents Layer 2 loops by electing a root bridge and blocking redundant paths.',
+    'Root bridge election: lowest Bridge ID (priority + MAC address) wins.',
+    'Root Guard stops a port from becoming root port if it receives a superior BPDU — protects against rogue root bridges.'
+  ], review:'What two values make up a Bridge ID, and which one is configurable?'},
+  {domain:'IP Connectivity', q:'Subnetting & VLSM', concepts:[
+    'CIDR notation (/24, /27, etc.) states how many bits are network bits.',
+    'VLSM lets you size subnets to actual host needs instead of one fixed mask everywhere.',
+    'Formula: usable hosts = 2^(host bits) − 2 (network + broadcast reserved).'
+  ], review:'Subnet 192.168.10.0/24 into 4 equal subnets — list each network address and usable range.'},
+  {domain:'IP Connectivity', q:'Static Routing & OSPF', concepts:[
+    'Static routes are manually configured; a floating static route uses a higher administrative distance as backup.',
+    'OSPF is a link-state protocol; routers become neighbors and elect a DR/BDR on multi-access segments.',
+    'Administrative distance ranks route sources — lower wins (connected=0, static=1, OSPF=110).'
+  ], review:'What makes a static route "floating," and why would you configure one?'},
+  {domain:'IP Services', q:'NAT, DHCP & DNS', concepts:[
+    'Static NAT = 1:1 mapping; Dynamic NAT = pool of public IPs; PAT = many private IPs share one public IP via ports.',
+    'DHCP process: Discover → Offer → Request → Acknowledge (DORA).',
+    'DNS resolves names to IPs; NTP synchronizes device clocks, which matters for logging and certificates.'
+  ], review:'Walk through the DORA process step by step.'},
+  {domain:'Security Fundamentals', q:'Port Security & ACLs', concepts:[
+    'Port security violation modes: protect (drop silently), restrict (drop + log), shutdown (err-disable the port).',
+    'Standard ACLs filter on source IP only — place close to the destination.',
+    'Extended ACLs filter on source/destination IP, protocol, and port — place close to the source.'
+  ], review:'Why does ACL placement differ between standard and extended ACLs?'},
+  {domain:'Automation & Programmability', q:'SDN & APIs', concepts:[
+    'Traditional networking: control plane + data plane live on every device.',
+    'SDN: centralizes the control plane in a controller; devices just forward (data plane).',
+    'REST APIs typically exchange data as JSON — key building block for network automation tools.'
+  ], review:'What is the structural difference between the control plane in traditional networking vs SDN?'},
+];
+
+const FLASHCARDS = [
+  {cat:'fund', q:'What are the 7 layers of the OSI model?', a:'Physical, Data Link, Network, Transport, Session, Presentation, Application'},
+  {cat:'fund', q:'What PDU is used at the Transport layer?', a:'Segment'},
+  {cat:'fund', q:'What PDU is used at the Data Link layer?', a:'Frame'},
+  {cat:'fund', q:'Convert binary 11000000 to decimal.', a:'192'},
+  {cat:'fund', q:'What does BIA stand for?', a:'Burned-In Address — the factory MAC address burned into the NIC'},
+  {cat:'fund', q:'How many bits are in an IPv4 address?', a:'32 bits'},
+  {cat:'fund', q:'How many bits are in an IPv6 address?', a:'128 bits'},
+  {cat:'fund', q:'What layer does a switch primarily operate at?', a:'Layer 2 (Data Link)'},
+  {cat:'access', q:'What protocol tags VLAN traffic on a trunk?', a:'802.1Q'},
+  {cat:'access', q:'What does STP stand for and what does it prevent?', a:'Spanning Tree Protocol — prevents Layer 2 switching loops'},
+  {cat:'access', q:'What two values make up a Bridge ID in STP?', a:'Bridge priority + MAC address'},
+  {cat:'access', q:'What does Root Guard protect against?', a:'A rogue/unauthorized switch becoming the new root bridge'},
+  {cat:'access', q:'Name the two EtherChannel negotiation protocols.', a:'LACP (open standard) and PAgP (Cisco proprietary)'},
+  {cat:'access', q:'What is the native VLAN used for on a trunk?', a:'Carries untagged traffic across the trunk link'},
+  {cat:'ip-conn', q:'What is the usable host formula for a subnet?', a:'2^(host bits) − 2'},
+  {cat:'ip-conn', q:'How many usable hosts does a /27 provide?', a:'30 (32 total − 2 reserved)'},
+  {cat:'ip-conn', q:'What administrative distance does a directly connected route have?', a:'0'},
+  {cat:'ip-conn', q:'What administrative distance does OSPF have by default?', a:'110'},
+  {cat:'ip-conn', q:'What is a floating static route?', a:'A backup static route configured with a higher AD so it\'s only used if the primary route fails'},
+  {cat:'ip-conn', q:'What does DR/BDR election apply to in OSPF?', a:'Multi-access network segments, to reduce the number of adjacencies'},
+  {cat:'services', q:'Expand the acronym DORA (DHCP process).', a:'Discover, Offer, Request, Acknowledge'},
+  {cat:'services', q:'What is the difference between static NAT and PAT?', a:'Static NAT = 1:1 IP mapping; PAT = many private IPs share one public IP via port numbers'},
+  {cat:'services', q:'What protocol synchronizes device clocks on a network?', a:'NTP (Network Time Protocol)'},
+  {cat:'services', q:'What port does DNS use?', a:'UDP/TCP port 53'},
+  {cat:'security', q:'Name the 3 port security violation modes.', a:'Protect, Restrict, Shutdown'},
+  {cat:'security', q:'What does a standard ACL filter on?', a:'Source IP address only'},
+  {cat:'security', q:'What does an extended ACL filter on?', a:'Source IP, destination IP, protocol, and port number'},
+  {cat:'security', q:'What does AAA stand for?', a:'Authentication, Authorization, Accounting'},
+  {cat:'auto', q:'In SDN, where does the control plane live?', a:'Centralized in a controller, separate from the forwarding devices'},
+  {cat:'auto', q:'What data format do most network REST APIs use?', a:'JSON'},
+];
+
+const QUIZ = [
+  {q:'Which OSI layer is responsible for logical addressing and routing?', opts:['Data Link','Network','Transport','Session'], correct:1, why:'Layer 3 (Network) handles IP addressing and routing between networks.'},
+  {q:'What is the usable host count for a /28 subnet?', opts:['14','16','30','62'], correct:0, why:'A /28 has 4 host bits: 2^4 − 2 = 14 usable hosts.'},
+  {q:'Which device breaks up broadcast domains?', opts:['Hub','Switch','Router','Repeater'], correct:2, why:'Routers separate broadcast domains; switches only separate collision domains (per port).'},
+  {q:'What does ARP resolve?', opts:['Domain name to IP','IP address to MAC address','MAC address to port','Port to protocol'], correct:1, why:'ARP (Address Resolution Protocol) maps a known IP address to its MAC address on the local segment.'},
+  {q:'Which port security violation mode drops offending traffic AND logs it, without disabling the port?', opts:['Protect','Restrict','Shutdown','Guard'], correct:1, why:'Restrict drops the violating traffic and generates a log/SNMP trap, but keeps the port up.'},
+  {q:'What is the default administrative distance of a static route?', opts:['0','1','90','110'], correct:1, why:'Static routes default to AD 1, making them preferred over any dynamic routing protocol unless floated higher.'},
+  {q:'Which protocol prevents Layer 2 loops?', opts:['OSPF','STP','ARP','HSRP'], correct:1, why:'Spanning Tree Protocol blocks redundant Layer 2 paths to prevent broadcast storms and loops.'},
+  {q:'On a trunk link, what carries the untagged frames?', opts:['Access VLAN','Native VLAN','Management VLAN','Voice VLAN'], correct:1, why:'The native VLAN is the one VLAN on a trunk that is sent untagged.'},
+  {q:'What does PAT allow multiple internal hosts to do?', opts:['Share one public IP using different ports','Share one MAC address','Bypass DNS','Skip the DHCP process'], correct:0, why:'PAT (Port Address Translation) maps many private IPs to one public IP by using unique source ports.'},
+  {q:'What is the correct DHCP process order?', opts:['Offer, Discover, Ack, Request','Discover, Offer, Request, Ack','Request, Discover, Offer, Ack','Discover, Request, Offer, Ack'], correct:1, why:'DORA: Discover → Offer → Request → Acknowledge.'},
+  {q:'Which OSPF role is elected on a multi-access segment to reduce adjacencies?', opts:['Root Bridge','Designated Router','Standby Router','Backup Bridge'], correct:1, why:'OSPF elects a DR (and BDR) on multi-access networks so routers form adjacencies through it instead of full-mesh.'},
+  {q:'What does a standard ACL filter traffic by?', opts:['Source IP only','Destination IP only','Source and destination IP + port','Protocol only'], correct:0, why:'Standard ACLs can only match on source IP address, which is why they should sit close to the destination.'},
+  {q:'How many bits does one hexadecimal digit represent?', opts:['2','4','8','16'], correct:1, why:'Each hex digit represents exactly 4 binary bits (a nibble).'},
+  {q:'What is the AAA framework used for?', opts:['Load balancing traffic','Authentication, Authorization, Accounting for access control','Address translation','Spanning tree election'], correct:1, why:'AAA governs who can access a device (Authentication), what they can do (Authorization), and logs what they did (Accounting).'},
+  {q:'In SDN, what happens to the control plane?', opts:['It moves to every switch','It is centralized in a controller','It is removed entirely','It merges with the data plane'], correct:1, why:'SDN centralizes the control plane in a controller, leaving devices to just forward traffic (data plane).'},
+  {q:'What does VLSM allow a network admin to do?', opts:['Use a single mask network-wide','Size subnets differently based on actual host needs','Skip subnetting entirely','Convert IPv4 to IPv6'], correct:1, why:'Variable Length Subnet Masking lets you allocate subnet sizes matched to real host requirements instead of one fixed mask.'},
+  {q:'What is the primary purpose of NTP?', opts:['Resolve domain names','Synchronize device clocks','Translate addresses','Assign IP leases'], correct:1, why:'NTP keeps device clocks in sync, which matters for accurate logging, troubleshooting, and certificate validation.'},
+  {q:'Which STP enhancement stops a port from becoming root port if it hears a superior BPDU?', opts:['BPDU Guard','Root Guard','Loop Guard','UplinkFast'], correct:1, why:'Root Guard blocks a port from transitioning to root port role, protecting against a rogue root bridge takeover.'},
+  {q:'What does EtherChannel accomplish?', opts:['Bundles multiple physical links into one logical link','Encrypts trunk traffic','Filters VLAN traffic','Elects a root bridge'], correct:0, why:'EtherChannel (via LACP or PAgP) bundles multiple physical links for increased bandwidth and redundancy as one logical interface.'},
+  {q:'What data format do most modern network REST APIs return?', opts:['XML only','CSV','JSON','Plain text'], correct:2, why:'JSON is the standard, lightweight format most network device and controller APIs use for structured data.'},
+];
+
+/* ============ STATE ============ */
+let state = {progress:{}, quizBest:null};
+const STORAGE_KEY = 'ccna-command-center-state';
+
+async function loadState(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value) state = JSON.parse(res.value);
+  }catch(e){ /* no saved state yet */ }
+  render();
+}
+async function saveState(){
+  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state), false); }catch(e){}
+}
+
+/* ============ TABS ============ */
+document.getElementById('tabs').addEventListener('click', e=>{
+  const btn = e.target.closest('.tab');
+  if(!btn) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const tab = btn.dataset.tab;
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  document.getElementById('view-'+tab).style.display='block';
+});
+
+/* ============ MAP / TOPOLOGY ============ */
+function domainProgress(d){
+  const done = d.topics.filter(t=>state.progress[key(d.id,t.t)]).length;
+  return done / d.topics.length;
+}
+function key(domainId, topic){ return domainId+'::'+topic; }
+
+function renderMap(){
+  const svg = document.getElementById('topo-svg');
+  let html = '';
+  EDGES.forEach(([a,b])=>{
+    const da = DOMAINS.find(d=>d.id===a), db = DOMAINS.find(d=>d.id===b);
+    const pa = domainProgress(da), pb = domainProgress(db);
+    const lit = pa>0 && pb>0;
+    html += `<line class="edge ${lit?'lit':''}" x1="${da.x}" y1="${da.y}" x2="${db.x}" y2="${db.y}"/>`;
+  });
+  DOMAINS.forEach(d=>{
+    const p = domainProgress(d);
+    let fill = 'var(--panel-alt)', stroke = 'var(--text-faint)';
+    if(p>0 && p<1){ fill='var(--alert-dim)'; stroke='var(--alert)'; }
+    if(p===1){ fill='var(--signal-dim)'; stroke='var(--signal)'; }
+    const r = 34 + d.weight*0.6;
+    html += `<g class="node-group" data-domain="${d.id}">
+      <circle class="node-circle" cx="${d.x}" cy="${d.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+      <text class="node-label" x="${d.x}" y="${d.y-4}" text-anchor="middle">${d.name.split(' ').slice(0,2).join(' ')}</text>
+      <text class="node-pct" x="${d.x}" y="${d.y+12}" text-anchor="middle">${Math.round(p*100)}% · ${d.weight}% wt</text>
+    </g>`;
+  });
+  svg.innerHTML = html;
+  svg.querySelectorAll('.node-group').forEach(g=>{
+    g.addEventListener('click', ()=>{
+      document.querySelector('.tab[data-tab="tracker"]').click();
+      setTimeout(()=>{
+        const el = document.querySelector(`[data-domain-block="${g.dataset.domain}"]`);
+        if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      },50);
+    });
+  });
+}
+
+function renderStats(){
+  const allTopics = DOMAINS.flatMap(d=>d.topics.map(t=>key(d.id,t.t)));
+  const done = allTopics.filter(k=>state.progress[k]).length;
+  const pct = Math.round((done/allTopics.length)*100);
+  document.getElementById('stat-pct').textContent = pct+'%';
+  document.getElementById('stat-done').textContent = `${done}/${allTopics.length}`;
+  document.getElementById('stat-quiz').textContent = state.quizBest===null ? '—' : `${state.quizBest}/${QUIZ.length}`;
+}
+
+/* ============ TRACKER ============ */
+function renderTracker(){
+  const c = document.getElementById('tracker-container');
+  c.innerHTML = DOMAINS.map(d=>{
+    const p = domainProgress(d);
+    return `<div class="domain-block" data-domain-block="${d.id}">
+      <div class="domain-head">
+        <div class="domain-title">${d.name} <span class="domain-weight">${d.weight}% of exam</span></div>
+        <div class="domain-bar"><div class="domain-bar-fill" style="width:${p*100}%"></div></div>
+      </div>
+      <div class="domain-body">
+        ${d.topics.map(t=>{
+          const k = key(d.id,t.t);
+          const checked = !!state.progress[k];
+          return `<div class="item ${checked?'done':''}">
+            <div class="checkbox ${checked?'checked':''}" data-key="${k}"></div>
+            <div class="item-label" data-key="${k}">${t.t}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  c.querySelectorAll('[data-key]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const k = el.dataset.key;
+      state.progress[k] = !state.progress[k];
+      saveState();
+      renderTracker(); renderMap(); renderStats();
+    });
+  });
+}
+
+/* ============ GUIDE ============ */
+function renderGuide(){
+  const c = document.getElementById('guide-container');
+  c.innerHTML = GUIDE.map((g,i)=>`
+    <div class="guide-card" data-i="${i}">
+      <div class="guide-q">
+        <div class="guide-q-title">${g.domain} — ${g.q}</div>
+        <div class="guide-q-arrow">▾</div>
+      </div>
+      <div class="guide-a"><div class="guide-a-inner">
+        <ul>${g.concepts.map(x=>`<li>${x}</li>`).join('')}</ul>
+        <div class="review-q">Review: ${g.review}</div>
+      </div></div>
+    </div>`).join('');
+  c.querySelectorAll('.guide-q').forEach(q=>{
+    q.addEventListener('click', ()=> q.closest('.guide-card').classList.toggle('open'));
+  });
+}
+
+/* ============ FLASHCARDS ============ */
+let fcDeck = [...FLASHCARDS];
+let fcIndex = 0;
+let fcFilter = 'all';
+const CAT_NAMES = {all:'All', fund:'Fundamentals', access:'Network Access', 'ip-conn':'IP Connectivity', services:'IP Services', security:'Security', auto:'Automation'};
+
+function renderFlashFilters(){
+  const cats = ['all', ...new Set(FLASHCARDS.map(c=>c.cat))];
+  const el = document.getElementById('flash-filters');
+  el.innerHTML = cats.map(c=>`<button class="chip ${c===fcFilter?'active':''}" data-cat="${c}">${CAT_NAMES[c]}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(ch=>{
+    ch.addEventListener('click', ()=>{
+      fcFilter = ch.dataset.cat;
+      fcDeck = fcFilter==='all' ? [...FLASHCARDS] : FLASHCARDS.filter(c=>c.cat===fcFilter);
+      fcIndex = 0;
+      renderFlashFilters(); renderCard();
+    });
+  });
+}
+
+function renderCard(){
+  const card = document.getElementById('flashcard');
+  card.classList.remove('flipped');
+  const c = fcDeck[fcIndex];
+  document.getElementById('fc-tag-front').textContent = CAT_NAMES[c.cat];
+  document.getElementById('fc-tag-back').textContent = 'answer';
+  document.getElementById('fc-front').textContent = c.q;
+  document.getElementById('fc-back').textContent = c.a;
+  document.getElementById('fc-count').textContent = `${fcIndex+1} / ${fcDeck.length}`;
+}
+document.getElementById('flashcard').addEventListener('click', function(){ this.classList.toggle('flipped'); });
+document.getElementById('fc-next').addEventListener('click', ()=>{ fcIndex=(fcIndex+1)%fcDeck.length; renderCard(); });
+document.getElementById('fc-prev').addEventListener('click', ()=>{ fcIndex=(fcIndex-1+fcDeck.length)%fcDeck.length; renderCard(); });
+document.getElementById('fc-shuffle').addEventListener('click', ()=>{
+  for(let i=fcDeck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [fcDeck[i],fcDeck[j]]=[fcDeck[j],fcDeck[i]]; }
+  fcIndex=0; renderCard();
+});
+
+/* ============ QUIZ ============ */
+let quizIndex = 0, quizScore = 0, quizAnswered = false;
+function renderQuiz(){
+  const box = document.getElementById('quiz-box');
+  if(quizIndex >= QUIZ.length){
+    if(state.quizBest === null || quizScore > state.quizBest){ state.quizBest = quizScore; saveState(); renderStats(); }
+    box.innerHTML = `<div class="quiz-done">
+      <div class="quiz-score">FINAL SCORE</div>
+      <div class="big">${quizScore}/${QUIZ.length}</div>
+      <button class="btn primary" id="quiz-restart" style="margin-top:20px;">Retake Quiz</button>
+    </div>`;
+    document.getElementById('quiz-restart').addEventListener('click', ()=>{ quizIndex=0; quizScore=0; renderQuiz(); });
+    return;
+  }
+  const q = QUIZ[quizIndex];
+  quizAnswered = false;
+  box.innerHTML = `
+    <div class="quiz-progress"><span>QUESTION ${quizIndex+1} / ${QUIZ.length}</span><span>SCORE: ${quizScore}</span></div>
+    <div class="quiz-q">${q.q}</div>
+    <div id="quiz-opts">${q.opts.map((o,i)=>`<button class="quiz-opt" data-i="${i}">${o}</button>`).join('')}</div>
+    <div id="quiz-explain-slot"></div>
+    <div class="quiz-footer"><div></div><button class="btn primary" id="quiz-next" style="display:none;">Next →</button></div>
+  `;
+  box.querySelectorAll('.quiz-opt').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(quizAnswered) return;
+      quizAnswered = true;
+      const i = parseInt(btn.dataset.i);
+      box.querySelectorAll('.quiz-opt').forEach(b=>b.classList.add('disabled'));
+      if(i===q.correct){
+        btn.classList.add('correct'); quizScore++;
+      }else{
+        btn.classList.add('wrong');
+        box.querySelector(`[data-i="${q.correct}"]`).classList.add('correct');
+      }
+      document.getElementById('quiz-explain-slot').innerHTML = `<div class="quiz-explain">${q.why}</div>`;
+      document.getElementById('quiz-next').style.display = 'inline-block';
+    });
+  });
+  document.getElementById('quiz-next').addEventListener('click', ()=>{ quizIndex++; renderQuiz(); });
+}
+
+/* ============ RENDER ALL ============ */
+function render(){
+  renderMap();
+  renderStats();
+  renderTracker();
+  renderGuide();
+  renderFlashFilters();
+  renderCard();
+  renderQuiz();
+}
+loadState();
+</script>
+</body>
+</html>
